@@ -184,35 +184,6 @@ $canMatch = $heuristic->support(string $input): bool;
 // Product SKUs
 "{category:str}-{product:int}-{variant:str}?"
 ```
-
-## Development
-
-### Docker Setup
-
-The project includes Docker configuration for development:
-
-```bash
-# Build and start development environment
-./docker.sh up -d
-
-# Run commands in container  
-./docker.sh exec composer install
-./docker.sh exec php -v
-
-# Run tests
-./docker.sh exec composer test
-```
-
-### Running Tests
-
-```bash
-# Via Docker
-./docker.sh exec ./vendor/bin/phpunit
-
-# Direct PHP (requires PHP 8.1+)
-./vendor/bin/phpunit
-```
-
 ### Project Structure
 
 ```
