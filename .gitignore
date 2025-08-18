@@ -1,0 +1,49 @@
+# Dependency directories
+/vendor/
+
+# Composer files
+composer.lock
+
+# PHPUnit
+.phpunit.cache/
+phpunit.xml
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+desktop.ini
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cache directories
+cache/
+tmp/
+.phpunit.*
+.php-cs-fixer.cache
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# AI stuff
+.claude

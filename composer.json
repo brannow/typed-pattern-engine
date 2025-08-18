@@ -1,0 +1,51 @@
+{
+  "name": "brannow/typed-pattern-engine",
+  "description": "Human-readable pattern matching engine with type-safe value extraction and bidirectional processing",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "pattern",
+    "matching",
+    "regex",
+    "dsl",
+    "type-safe",
+    "url",
+    "routing",
+    "parsing"
+  ],
+  "authors": [
+    {
+      "name": "Benjamin Rannow",
+      "email": "rannow@emerise.de"
+    }
+  ],
+  "require": {
+    "php": "^8.1"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.86",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^10.0|^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "TypedPatternEngine\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "TypedPatternEngine\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "config": {
+    "sort-packages": true,
+    "optimize-autoloader": true
+  },
+  "scripts": {
+    "test": "phpunit",
+    "phpstan": "phpstan",
+    "php-cs-fixer": "php-cs-fixer"
+  }
+}

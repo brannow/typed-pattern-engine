@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.1', '8.2', '8.3', '8.4']
+    
+    name: PHP ${{ matrix.php-version }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql
+        coverage: xdebug
+        tools: composer:v2
+    
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict
+    
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v4
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-${{ matrix.php-version }}-
+    
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-interaction
+    
+    - name: Run test suite
+      run: vendor/bin/phpunit
+
+    - name: Run PHPStan (static analysis)
+      run: vendor/bin/phpstan analyse --no-progress
+      if: matrix.php-version == '8.4'
+
+    - name: Check code style
+      run: vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
+      if: matrix.php-version == '8.4'
