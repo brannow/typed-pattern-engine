@@ -4,6 +4,8 @@ namespace TypedPatternEngine;
 
 use TypedPatternEngine\Compiler\CompiledPatternFactory;
 use TypedPatternEngine\Heuristic\HeuristicCompiler;
+use TypedPatternEngine\Nodes\NodeRegistry;
+use TypedPatternEngine\Nodes\NodeRegistryInterface;
 use TypedPatternEngine\Pattern\PatternCompiler;
 use TypedPatternEngine\Types\TypeRegistry;
 use TypedPatternEngine\Types\TypeRegistryInterface;
@@ -15,14 +17,16 @@ final class TypedPatternEngine
     private ?HeuristicCompiler $heuristicCompiler = null;
 
     public function __construct(
+        private readonly NodeRegistryInterface $nodeRegistry = new NodeRegistry(),
         private readonly TypeRegistryInterface $typeRegistry = new TypeRegistry()
     ) {}
 
     public function getPatternCompiler(): PatternCompiler
     {
         return $this->patternCompiler ??= new PatternCompiler(
+            $this->nodeRegistry,
             $this->typeRegistry,
-            new CompiledPatternFactory($this->typeRegistry),
+            new CompiledPatternFactory($this->nodeRegistry, $this->typeRegistry),
             (new ValidationPipelineFactory())->create()
         );
     }

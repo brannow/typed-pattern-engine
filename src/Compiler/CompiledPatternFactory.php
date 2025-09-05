@@ -2,19 +2,17 @@
 
 namespace TypedPatternEngine\Compiler;
 
+use Throwable;
+use TypedPatternEngine\Exception\PatternCompilationException;
+use TypedPatternEngine\Exception\PatternSyntaxException;
+use TypedPatternEngine\Exception\PatternValidationException;
+use TypedPatternEngine\Exception\TypeSystemException;
 use TypedPatternEngine\Nodes\AstNode;
-use TypedPatternEngine\Nodes\GroupNode;
 use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
 use TypedPatternEngine\Nodes\Interfaces\NodeTreeInterface;
 use TypedPatternEngine\Nodes\Interfaces\TypeNodeInterface;
-use TypedPatternEngine\Nodes\LiteralNode;
-use TypedPatternEngine\Nodes\SequenceNode;
-use TypedPatternEngine\Nodes\SubSequenceNode;
-use TypedPatternEngine\Types\TypeRegistry;
-use TypedPatternEngine\Exception\PatternCompilationException;
-use TypedPatternEngine\Exception\PatternValidationException;
-use TypedPatternEngine\Exception\PatternSyntaxException;
-use TypedPatternEngine\Exception\TypeSystemException;
+use TypedPatternEngine\Nodes\NodeRegistryInterface;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 /**
  * Factory for creating and hydrating CompiledPattern instances
@@ -22,7 +20,8 @@ use TypedPatternEngine\Exception\TypeSystemException;
 final class CompiledPatternFactory
 {
     public function __construct(
-        private readonly TypeRegistry $typeRegistry
+        private readonly NodeRegistryInterface $nodeRegistry,
+        private readonly TypeRegistryInterface $typeRegistry
     ) {}
 
     /**
@@ -62,7 +61,6 @@ final class CompiledPatternFactory
     public function dehydrate(CompiledPattern $pattern): array
     {
         return [
-            'version' => '1.0',
             'pattern' => $pattern->getPattern(),
             'regex' => $pattern->getRegex(),
             'ast' => $this->serializeAst($pattern->getAst()),
@@ -111,17 +109,7 @@ final class CompiledPatternFactory
      */
     private function deserializeAst(array $data): AstNodeInterface
     {
-        return match ($data['type']) {
-            'literal' => LiteralNode::fromArray($data, $this->typeRegistry),
-            'group' => GroupNode::fromArray($data, $this->typeRegistry),
-            'sequence' => SequenceNode::fromArray($data, $this->typeRegistry),
-            'subsequence' => SubSequenceNode::fromArray($data, $this->typeRegistry),
-            default => throw new PatternCompilationException(
-                "Unknown node type during deserialization: " . $data['type'],
-                'cached_pattern',
-                'deserialization'
-            )
-        };
+        return $this->nodeRegistry->getNodeByData($data, $this->typeRegistry);
     }
 
     /**

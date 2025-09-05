@@ -2,13 +2,12 @@
 
 namespace TypedPatternEngine\Nodes;
 
+use TypedPatternEngine\Exception\PatternCompilationException;
 use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
 use TypedPatternEngine\Nodes\Interfaces\BoundaryProviderInterface;
 use TypedPatternEngine\Nodes\Interfaces\NestedNodeInterface;
 use TypedPatternEngine\Nodes\Interfaces\NodeGroupAwareInterface;
-use TypedPatternEngine\Types\TypeRegistry;
-use TypedPatternEngine\Exception\PatternCompilationException;
-use TypedPatternEngine\Exception\PatternValidationException;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 abstract class NestedAstNode extends NamedAstNode implements NestedNodeInterface
 {
@@ -99,16 +98,15 @@ abstract class NestedAstNode extends NamedAstNode implements NestedNodeInterface
 
     /**
      * @param array<string, string|array<string, string|array<string, string>>> $data
-     * @param TypeRegistry|null $typeRegistry
+     * @param NodeRegistryInterface $nodeRegistry
+     * @param TypeRegistryInterface $typeRegistry
      * @return static
-     * @throws PatternCompilationException
-     * @throws PatternValidationException
      */
-    public static function fromArray(array $data, ?TypeRegistry $typeRegistry = null): static
+    public static function fromArray(array $data, NodeRegistryInterface $nodeRegistry, TypeRegistryInterface $typeRegistry): static
     {
         $node = new static();
         foreach ($data['children'] as $childData) {
-            $childNode = self::createNodeFromArray($childData, $typeRegistry);
+            $childNode = self::createNodeFromArray($childData, $nodeRegistry, $typeRegistry);
             if ($childNode instanceof AstNode) {
                 $childNode->setRegex($childData['regex'] ?? null);
             }
@@ -120,23 +118,12 @@ abstract class NestedAstNode extends NamedAstNode implements NestedNodeInterface
 
     /**
      * @param array<string, string|array<string, string>> $data
-     * @param TypeRegistry|null $typeRegistry
+     * @param NodeRegistryInterface $nodeRegistry
+     * @param TypeRegistryInterface $typeRegistry
      * @return AstNodeInterface
-     * @throws PatternValidationException
-     * @throws PatternCompilationException
      */
-    private static function createNodeFromArray(array $data, ?TypeRegistry $typeRegistry = null): AstNodeInterface
+    private static function createNodeFromArray(array $data, NodeRegistryInterface $nodeRegistry, TypeRegistryInterface $typeRegistry): AstNodeInterface
     {
-        return match ($data['type']) {
-            'literal' => LiteralNode::fromArray($data),
-            'group' => GroupNode::fromArray($data, $typeRegistry),
-            'sequence' => SequenceNode::fromArray($data, $typeRegistry),
-            'subsequence' => SubSequenceNode::fromArray($data, $typeRegistry),
-            default => throw new PatternCompilationException(
-                "Unknown node type during deserialization: " . $data['type'],
-                'nested_pattern',
-                'deserialization'
-            )
-        };
+        return $nodeRegistry->getNodeByData($data, $typeRegistry);
     }
 }

@@ -23,7 +23,7 @@ class PatternErrorScenariosTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->engine = new TypedPatternEngine(new TypeRegistry());
+        $this->engine = new TypedPatternEngine();
     }
 
     #[DataProvider('constraintViolationProvider')]

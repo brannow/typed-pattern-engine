@@ -6,6 +6,8 @@ use TypedPatternEngine\Exception\PatternSyntaxException;
 
 final class SubSequenceNode extends SequenceNode
 {
+    public const TYPE = 'subsequence';
+
     /**
      * @return string
      */
@@ -118,6 +120,6 @@ final class SubSequenceNode extends SequenceNode
 
     public function getNodeType(): string
     {
-        return 'subsequence';
+        return SubSequenceNode::TYPE;
     }
 }

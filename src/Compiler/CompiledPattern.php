@@ -2,11 +2,12 @@
 
 namespace TypedPatternEngine\Compiler;
 
-use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
-use TypedPatternEngine\Types\TypeRegistry;
-use TypedPatternEngine\Exception\TypeSystemException;
-use TypedPatternEngine\Exception\PatternEngineInvalidArgumentException;
 use Throwable;
+use TypedPatternEngine\Exception\PatternEngineInvalidArgumentException;
+use TypedPatternEngine\Exception\TypeSystemException;
+use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
+use TypedPatternEngine\Nodes\NodeRegistryInterface;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 final class CompiledPattern
 {
@@ -17,7 +18,7 @@ final class CompiledPattern
      * @param array<string, string> $namedGroups
      * @param array<string, string> $groupTypes
      * @param array<string, array<string, mixed>> $groupConstraints
-     * @param TypeRegistry $typeRegistry
+     * @param TypeRegistryInterface $typeRegistry
      */
     public function __construct(
         private readonly string $pattern,
@@ -26,7 +27,7 @@ final class CompiledPattern
         private readonly array $namedGroups,
         private readonly array $groupTypes,
         private readonly array $groupConstraints,
-        private readonly TypeRegistry $typeRegistry
+        private readonly TypeRegistryInterface $typeRegistry
     ) {}
 
     public function getPattern(): string

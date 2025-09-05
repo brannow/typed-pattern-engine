@@ -2,15 +2,12 @@
 
 namespace TypedPatternEngine\Nodes;
 
+use RuntimeException;
 use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
 use TypedPatternEngine\Nodes\Interfaces\BoundaryProviderInterface;
 use TypedPatternEngine\Nodes\Interfaces\CompilationPhaseAwareInterface;
-use TypedPatternEngine\Nodes\Interfaces\LiteralNodeInterface;
-use TypedPatternEngine\Nodes\Interfaces\NestedNodeInterface;
 use TypedPatternEngine\Nodes\Interfaces\NodeTreeInterface;
-use TypedPatternEngine\Nodes\Interfaces\NodeValidationInterface;
-use TypedPatternEngine\Types\TypeRegistry;
-use RuntimeException;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 abstract class AstNode implements AstNodeInterface, CompilationPhaseAwareInterface
 {
@@ -164,5 +161,5 @@ abstract class AstNode implements AstNodeInterface, CompilationPhaseAwareInterfa
      * @return string
      */
     abstract public function generate(array $values): string;
-    abstract public static function fromArray(array $data, ?TypeRegistry $typeRegistry = null): static;
+    abstract public static function fromArray(array $data, NodeRegistryInterface $nodeRegistry ,TypeRegistryInterface $typeRegistry): static;
 }

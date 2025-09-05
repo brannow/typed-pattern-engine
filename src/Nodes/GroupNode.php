@@ -3,35 +3,32 @@
 namespace TypedPatternEngine\Nodes;
 
 use TypedPatternEngine\Exception\PatternEngineInvalidArgumentException;
+use TypedPatternEngine\Exception\PatternRuntimeException;
+use TypedPatternEngine\Exception\TypeSystemException;
 use TypedPatternEngine\Nodes\Interfaces\TypeNodeInterface;
 use TypedPatternEngine\Types\Constrains\DefaultConstraint;
 use TypedPatternEngine\Types\TypeInterface;
-use TypedPatternEngine\Types\TypeRegistry;
-use TypedPatternEngine\Exception\PatternRuntimeException;
-use TypedPatternEngine\Exception\PatternValidationException;
-use TypedPatternEngine\Exception\TypeSystemException;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 final class GroupNode extends NamedAstNode implements TypeNodeInterface
 {
+    public const TYPE = 'group';
+
     private string $groupId = '';
-    private readonly TypeRegistry $typeRegistry;
     private readonly TypeInterface $type;
 
     /**
      * @param string $name
      * @param string $typeName
      * @param array<string, mixed> $constraints
-     * @param TypeRegistry|null $typeRegistry
-     * @throws TypeSystemException
-     * @throws PatternValidationException
+     * @param TypeRegistryInterface $typeRegistry
      */
     public function __construct(
         private readonly string $name, // variable name
         string $typeName, // concrete str / string / int / integer ...
-        array  $constraints = [], // ['constraintName' => 'value', ...]
-        ?TypeRegistry $typeRegistry = null
+        array  $constraints, // ['constraintName' => 'value', ...]
+        private readonly TypeRegistryInterface $typeRegistry
     ) {
-        $this->typeRegistry = $typeRegistry ?? throw new PatternValidationException("TypeRegistry not provided in GroupNode");
         $this->type = $this->typeRegistry->getTypeObject($typeName, $constraints);
     }
 
@@ -62,7 +59,7 @@ final class GroupNode extends NamedAstNode implements TypeNodeInterface
 
     public function getNodeType(): string
     {
-        return 'group';
+        return GroupNode::TYPE;
     }
 
     /**
@@ -171,17 +168,17 @@ final class GroupNode extends NamedAstNode implements TypeNodeInterface
 
     /**
      * @param array<string, mixed> $data
-     * @param TypeRegistry|null $typeRegistry
+     * @param NodeRegistryInterface $nodeRegistry
+     * @param TypeRegistryInterface $typeRegistry
      * @return static
-     * @throws PatternValidationException
      */
-    public static function fromArray(array $data, ?TypeRegistry $typeRegistry = null): static
+    public static function fromArray(array $data, NodeRegistryInterface $nodeRegistry, TypeRegistryInterface $typeRegistry): static
     {
         $node = new self(
             $data['name'],
             $data['type_name'],
             $data['type_constraints'] ,
-            $typeRegistry ?? throw new PatternValidationException("TypeRegistry not provided in GroupNode at Hydration")
+            $typeRegistry
         );
         $node->setRegex($data['regex'] ?? null);
         $node->setGroupId($data['groupId']);
