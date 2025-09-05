@@ -4,6 +4,8 @@ namespace TypedPatternEngine\Pattern;
 
 use TypedPatternEngine\Nodes\AstNode;
 use TypedPatternEngine\Nodes\GroupNode;
+use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
+use TypedPatternEngine\Nodes\Interfaces\CompilationPhaseAwareInterface;
 use TypedPatternEngine\Nodes\LiteralNode;
 use TypedPatternEngine\Nodes\SequenceNode;
 use TypedPatternEngine\Nodes\SubSequenceNode;
@@ -47,6 +49,8 @@ final class PatternParser
                 $root->addChild($node);
             }
         }
+
+        $this->finalizeTree($root);
 
         return $root;
     }
@@ -272,5 +276,18 @@ final class PatternParser
         }
 
         return $pairs;
+    }
+
+    /**
+     * Signal that tree construction is complete
+     * @param AstNodeInterface $root
+     * @return void
+     */
+    private function finalizeTree(AstNodeInterface $root): void
+    {
+        // Signal that tree construction is complete
+        if ($root instanceof CompilationPhaseAwareInterface) {
+            $root->onTreeComplete();
+        }
     }
 }
