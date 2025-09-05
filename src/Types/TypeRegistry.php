@@ -4,27 +4,29 @@ namespace TypedPatternEngine\Types;
 
 use TypedPatternEngine\Types\Constrains\ConstraintRegistry;
 use TypedPatternEngine\Exception\TypeSystemException;
+use TypedPatternEngine\Types\Constrains\ConstraintRegistryInterface;
 
 /**
  * Type Registry - regular class with dependency injection
  */
-final class TypeRegistry
+final class TypeRegistry implements TypeRegistryInterface
 {
     /**
      * @var array<string, string> lookup Map of [TypeNames => TypeClass]
      */
     private array $types = [];
-    private readonly ConstraintRegistry $constraintRegistry;
 
     /**
      * @throws TypeSystemException
      */
-    public function __construct(bool $registerDefaults = true)
+    public function __construct(
+        bool $registerDefaults = true,
+        private readonly ?ConstraintRegistryInterface $constraintRegistry = new ConstraintRegistry()
+    )
     {
         if ($registerDefaults) {
             $this->registerDefaults();
         }
-        $this->constraintRegistry = new ConstraintRegistry();
     }
 
     /**

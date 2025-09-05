@@ -4,7 +4,7 @@ namespace TypedPatternEngine\Pattern;
 
 use TypedPatternEngine\Compiler\CompiledPattern;
 use TypedPatternEngine\Compiler\CompiledPatternFactory;
-use TypedPatternEngine\Types\TypeRegistry;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 use TypedPatternEngine\Validation\ValidatorInterface;
 use TypedPatternEngine\Exception\PatternCompilationException;
 use TypedPatternEngine\Exception\PatternValidationException;
@@ -14,7 +14,7 @@ use TypedPatternEngine\Exception\TypeSystemException;
 final class PatternCompiler
 {
     public function __construct(
-        private readonly TypeRegistry $typeRegistry,
+        private readonly TypeRegistryInterface $typeRegistry,
         private readonly CompiledPatternFactory $factory,
         private readonly ValidatorInterface $validator
     ) {}

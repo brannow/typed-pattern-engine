@@ -6,6 +6,7 @@ use TypedPatternEngine\Compiler\CompiledPatternFactory;
 use TypedPatternEngine\Heuristic\HeuristicCompiler;
 use TypedPatternEngine\Pattern\PatternCompiler;
 use TypedPatternEngine\Types\TypeRegistry;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 use TypedPatternEngine\Validation\ValidationPipelineFactory;
 
 final class TypedPatternEngine
@@ -14,7 +15,7 @@ final class TypedPatternEngine
     private ?HeuristicCompiler $heuristicCompiler = null;
 
     public function __construct(
-        private readonly TypeRegistry $typeRegistry
+        private readonly TypeRegistryInterface $typeRegistry = new TypeRegistry()
     ) {}
 
     public function getPatternCompiler(): PatternCompiler

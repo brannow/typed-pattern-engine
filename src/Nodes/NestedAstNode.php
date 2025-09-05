@@ -15,6 +15,8 @@ abstract class NestedAstNode extends NamedAstNode implements NestedNodeInterface
     /** @var AstNodeInterface[] */
     protected array $children = [];
 
+    private ?array $groupNamesCache = null;
+
     final public function __construct()
     {}
 
@@ -57,6 +59,11 @@ abstract class NestedAstNode extends NamedAstNode implements NestedNodeInterface
      * @return array<string>
      */
     public function getGroupNames(): array
+    {
+        return $this->groupNamesCache ??= $this->generateGroupNameList();
+    }
+
+    private function generateGroupNameList(): array
     {
         $names = [];
         foreach ($this->children as $child) {

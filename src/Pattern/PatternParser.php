@@ -15,6 +15,7 @@ use TypedPatternEngine\Types\TypeRegistry;
 use TypedPatternEngine\Exception\PatternValidationException;
 use TypedPatternEngine\Exception\PatternSyntaxException;
 use TypedPatternEngine\Exception\TypeSystemException;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 final class PatternParser
 {
@@ -26,7 +27,7 @@ final class PatternParser
      * @param PatternGroupCounterInterface|null $groupCounter
      */
     public function __construct(
-        private readonly TypeRegistry $typeRegistry,
+        private readonly TypeRegistryInterface $typeRegistry,
         private readonly string       $pattern = '',
         private readonly ?PatternGroupCounterInterface $groupCounter = new PatternGroupCounter()
     )
