@@ -15,21 +15,16 @@ final class GroupNode extends NamedAstNode implements TypeNodeInterface
     public const TYPE = 'group';
 
     private string $groupId = '';
-    private readonly TypeInterface $type;
 
     /**
      * @param string $name
-     * @param string $typeName
-     * @param array<string, mixed> $constraints
-     * @param TypeRegistryInterface $typeRegistry
+     * @param TypeInterface $type
      */
     public function __construct(
         private readonly string $name, // variable name
-        string $typeName, // concrete str / string / int / integer ...
-        array  $constraints, // ['constraintName' => 'value', ...]
-        private readonly TypeRegistryInterface $typeRegistry
+        private readonly TypeInterface $type
     ) {
-        $this->type = $this->typeRegistry->getTypeObject($typeName, $constraints);
+
     }
 
     /**
@@ -176,9 +171,7 @@ final class GroupNode extends NamedAstNode implements TypeNodeInterface
     {
         $node = new self(
             $data['name'],
-            $data['type_name'],
-            $data['type_constraints'] ,
-            $typeRegistry
+            $typeRegistry->getTypeObject($data['type_name'], $data['type_constraints'])
         );
         $node->setRegex($data['regex'] ?? null);
         $node->setGroupId($data['groupId']);

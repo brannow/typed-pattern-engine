@@ -12,7 +12,7 @@ use TypedPatternEngine\Types\Constrains\ConstraintRegistryInterface;
 final class TypeRegistry implements TypeRegistryInterface
 {
     /**
-     * @var array<string, string> lookup Map of [TypeNames => TypeClass]
+     * @var array<string, class-string<TypeInterface>> lookup Map of [TypeNames => TypeClass]
      */
     private array $types = [];
 
@@ -46,7 +46,7 @@ final class TypeRegistry implements TypeRegistryInterface
     }
 
     /**
-     * @param string $class
+     * @param class-string<TypeInterface> $class
      * @param string[] $names
      * @return void
      * @throws TypeSystemException

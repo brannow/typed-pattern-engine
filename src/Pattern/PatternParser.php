@@ -131,7 +131,7 @@ final class PatternParser
         $constraints = isset($matches[3]) ? $this->parseConstraints($matches[3]) : [];
         // Create group node (always required - optionality handled by SubSequence wrapper)
         /** @var GroupNode $node */
-        $node = $this->nodeRegistry->getNodeByType(GroupNode::TYPE, $name, $type, $constraints, $this->typeRegistry);
+        $node = $this->nodeRegistry->getNodeByType(GroupNode::TYPE, $name, $this->typeRegistry->getTypeObject($type, $constraints));
         // Assign group ID
         $node->setGroupId('g' . $this->groupCounter->increaseCounter());
 
