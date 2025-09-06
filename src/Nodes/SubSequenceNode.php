@@ -2,11 +2,40 @@
 
 namespace TypedPatternEngine\Nodes;
 
+use Throwable;
 use TypedPatternEngine\Exception\PatternSyntaxException;
+use TypedPatternEngine\Types\TypeInterface;
 
 final class SubSequenceNode extends SequenceNode
 {
     public const TYPE = 'subsequence';
+
+    private ?array $activationRequirements = null;
+
+    /**
+     * @return string[]|TypeInterface[]
+     */
+    private function generateActivationRequirements(): array
+    {
+        $requirements = [];
+        foreach ($this->children as $child) {
+            if ($child instanceof GroupNode) {
+                $requirements[$child->getGroupId()] = [
+                    'name' => $child->getName(),
+                    'type' => $child->getType()
+                ];
+            }
+        }
+        return $requirements;
+    }
+
+    /**
+     * @return string[]|TypeInterface[]
+     */
+    protected function getActivationRequirements(): array
+    {
+        return $this->activationRequirements ??= $this->generateActivationRequirements();
+    }
 
     /**
      * @return string
@@ -24,74 +53,20 @@ final class SubSequenceNode extends SequenceNode
      */
     public function generate(array $values): string
     {
-        // First, check if ALL required groups in this subsequence have values
-        if (!$this->canSatisfyAllRequirements($values)) {
-            return '';
+        foreach ($this->getActivationRequirements() as $requirement) {
+            $value = $values[$requirement['name']] ?? null;
+            /** @var TypeInterface $type */
+            $type = $requirement['type'];
+
+            try {
+                $type->parseValue($value);
+            } catch (Throwable) {
+                return '';
+            }
         }
 
         // All requirements can be satisfied, generate the full subsequence
         return parent::generate($values);
-    }
-
-    /**
-     * Check if all required elements in this subsequence can be satisfied.
-     * This implements the "all-or-nothing" rule for subsequences.
-     *
-     * @param array<string, mixed> $values
-     * @return bool
-     */
-    private function canSatisfyAllRequirements(array $values): bool
-    {
-        foreach ($this->children as $child) {
-            if ($child instanceof GroupNode) {
-                // Check if this required group has a value
-                $groupName = $child->getName();
-                if (!isset($values[$groupName])) {
-                    // Required group has no value - subsequence cannot be satisfied
-                    return false;
-                }
-            } elseif ($child instanceof SubSequenceNode) {
-                // Nested subsequences are optional, so they don't block satisfaction
-                // But we still check if they CAN be satisfied for proper generation
-                // (they will handle their own all-or-nothing logic)
-                continue;
-            } elseif ($child instanceof LiteralNode) {
-                // Literals are always satisfiable
-                continue;
-            } elseif ($child instanceof SequenceNode) {
-                // Check if the sequence can be satisfied
-                if (!$this->canSequenceBeSatisfied($child, $values)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if a sequence node can be satisfied with the given values.
-     *
-     * @param SequenceNode $sequence
-     * @param array<string, mixed> $values
-     * @return bool
-     */
-    private function canSequenceBeSatisfied(SequenceNode $sequence, array $values): bool
-    {
-        foreach ($sequence->getChildren() as $child) {
-            if ($child instanceof GroupNode) {
-                $groupName = $child->getName();
-                if (!isset($values[$groupName])) {
-                    return false;
-                }
-            } elseif ($child instanceof SequenceNode && !($child instanceof SubSequenceNode)) {
-                // Recursively check nested sequences (but not subsequences which are optional)
-                if (!$this->canSequenceBeSatisfied($child, $values)) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     /**
