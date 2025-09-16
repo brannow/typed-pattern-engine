@@ -2,29 +2,37 @@
 
 namespace TypedPatternEngine\Pattern;
 
+use TypedPatternEngine\Exception\PatternSyntaxException;
+use TypedPatternEngine\Exception\PatternValidationException;
+use TypedPatternEngine\Exception\TypeSystemException;
 use TypedPatternEngine\Nodes\AstNode;
 use TypedPatternEngine\Nodes\GroupNode;
+use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
+use TypedPatternEngine\Nodes\Interfaces\CompilationPhaseAwareInterface;
+use TypedPatternEngine\Nodes\Interfaces\LiteralNodeInterface;
+use TypedPatternEngine\Nodes\Interfaces\NodeTreeInterface;
 use TypedPatternEngine\Nodes\LiteralNode;
+use TypedPatternEngine\Nodes\NodeRegistryInterface;
 use TypedPatternEngine\Nodes\SequenceNode;
 use TypedPatternEngine\Nodes\SubSequenceNode;
 use TypedPatternEngine\Pattern\Helper\PatternGroupCounter;
 use TypedPatternEngine\Pattern\Helper\PatternGroupCounterInterface;
 use TypedPatternEngine\Types\TypeRegistry;
-use TypedPatternEngine\Exception\PatternValidationException;
-use TypedPatternEngine\Exception\PatternSyntaxException;
-use TypedPatternEngine\Exception\TypeSystemException;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 final class PatternParser
 {
     private int $pos = 0;
 
     /**
+     * @param NodeRegistryInterface $nodeRegistry
      * @param TypeRegistry $typeRegistry
      * @param string $pattern
      * @param PatternGroupCounterInterface|null $groupCounter
      */
     public function __construct(
-        private readonly TypeRegistry $typeRegistry,
+        private readonly NodeRegistryInterface $nodeRegistry,
+        private readonly TypeRegistryInterface $typeRegistry,
         private readonly string       $pattern = '',
         private readonly ?PatternGroupCounterInterface $groupCounter = new PatternGroupCounter()
     )
@@ -40,13 +48,15 @@ final class PatternParser
      */
     public function parse(?SequenceNode $rootNode = null): SequenceNode
     {
-        $root = $rootNode ?? new SequenceNode();
+        $root = $rootNode ?? $this->nodeRegistry->getNodeByType(SequenceNode::TYPE);
         while ($this->pos < strlen($this->pattern)) {
             $node = $this->parseNext();
             if ($node !== null) {
                 $root->addChild($node);
             }
         }
+
+        $this->finalizeTree($root);
 
         return $root;
     }
@@ -56,7 +66,7 @@ final class PatternParser
      * @throws PatternSyntaxException
      * @throws PatternValidationException
      */
-    private function parseNext(): ?AstNode
+    private function parseNext(): ?AstNodeInterface
     {
         if ($this->pos >= strlen($this->pattern)) {
             return null;
@@ -120,14 +130,16 @@ final class PatternParser
         $type = $matches[2];
         $constraints = isset($matches[3]) ? $this->parseConstraints($matches[3]) : [];
         // Create group node (always required - optionality handled by SubSequence wrapper)
-        $node = new GroupNode($name, $type, $constraints, $this->typeRegistry);
+        /** @var GroupNode $node */
+        $node = $this->nodeRegistry->getNodeByType(GroupNode::TYPE, $name, $this->typeRegistry->getTypeObject($type, $constraints));
         // Assign group ID
         $node->setGroupId('g' . $this->groupCounter->increaseCounter());
 
         // Syntax normalization: {group}? → ({group})
         if ($this->pos < strlen($this->pattern) && $this->pattern[$this->pos] === '?') {
             $this->pos++;
-            $subSequence = new SubSequenceNode();
+            /** @var SubSequenceNode $subSequence */
+            $subSequence = $this->nodeRegistry->getNodeByType(SubSequenceNode::TYPE);
             $subSequence->addChild($node);
             return $subSequence;
         }
@@ -136,12 +148,12 @@ final class PatternParser
     }
 
     /**
-     * @return SequenceNode
+     * @return NodeTreeInterface
      * @throws PatternValidationException
      * @throws PatternSyntaxException
      * @throws TypeSystemException
      */
-    private function parseSubSequence(): SequenceNode
+    private function parseSubSequence(): NodeTreeInterface
     {
         $start = $this->pos;
         $this->pos++; // Skip (
@@ -167,8 +179,10 @@ final class PatternParser
         $content = substr($this->pattern, $this->pos, $endPos - $this->pos - 1);
 
         // Parse the content recursively (but don't reset the group counter!)
-        $parser = new PatternParser($this->typeRegistry, $content, $this->groupCounter);
-        $node = $parser->parse(new SubSequenceNode());
+        $parser = new PatternParser($this->nodeRegistry, $this->typeRegistry, $content, $this->groupCounter);
+        /** @var SubSequenceNode $node */
+        $node = $this->nodeRegistry->getNodeByType(SubSequenceNode::TYPE);
+        $node = $parser->parse($node);
 
         // SubSequenceNode is inherently optional by design - no need to mark it
         // The node type itself indicates that this section is optional
@@ -182,7 +196,7 @@ final class PatternParser
     /**
      * @throws PatternSyntaxException
      */
-    private function parseLiteral(): LiteralNode
+    private function parseLiteral(): LiteralNodeInterface
     {
         $start = $this->pos;
         $literal = '';
@@ -203,7 +217,9 @@ final class PatternParser
             throw new PatternSyntaxException("Empty literal", $this->pattern, $start);
         }
 
-        return new LiteralNode($literal);
+        /** @var LiteralNodeInterface $node */
+        $node = $this->nodeRegistry->getNodeByType(LiteralNode::TYPE, $literal);
+        return $node;
     }
 
     /**
@@ -272,5 +288,18 @@ final class PatternParser
         }
 
         return $pairs;
+    }
+
+    /**
+     * Signal that tree construction is complete
+     * @param AstNodeInterface $root
+     * @return void
+     */
+    private function finalizeTree(AstNodeInterface $root): void
+    {
+        // Signal that tree construction is complete
+        if ($root instanceof CompilationPhaseAwareInterface) {
+            $root->onTreeComplete();
+        }
     }
 }

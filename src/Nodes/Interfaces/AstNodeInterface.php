@@ -2,6 +2,7 @@
 
 namespace TypedPatternEngine\Nodes\Interfaces;
 
+use TypedPatternEngine\Nodes\NodeRegistryInterface;
 use TypedPatternEngine\Types\TypeRegistry;
 
 /**
@@ -34,8 +35,9 @@ interface AstNodeInterface extends NodeValidationInterface
 
     /**
      * @param array<string, string|array<string, string>> $data
-     * @param TypeRegistry|null $typeRegistry
+     * @param NodeRegistryInterface $nodeRegistry
+     * @param TypeRegistry $typeRegistry
      * @return static
      */
-    public static function fromArray(array $data, ?TypeRegistry $typeRegistry = null): static;
+    public static function fromArray(array $data, NodeRegistryInterface $nodeRegistry, TypeRegistry $typeRegistry): static;
 }

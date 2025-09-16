@@ -4,6 +4,8 @@ namespace TypedPatternEngine\Nodes;
 
 class SequenceNode extends NestedAstNode
 {
+    public const TYPE = 'sequence';
+
     /**
      * generate string from assoc data array
      *
@@ -24,6 +26,6 @@ class SequenceNode extends NestedAstNode
      */
     public function getNodeType(): string
     {
-        return 'sequence';
+        return SequenceNode::TYPE;
     }
 }

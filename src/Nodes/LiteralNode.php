@@ -3,10 +3,12 @@
 namespace TypedPatternEngine\Nodes;
 
 use TypedPatternEngine\Nodes\Interfaces\LiteralNodeInterface;
-use TypedPatternEngine\Types\TypeRegistry;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
 final class LiteralNode extends NamedAstNode implements LiteralNodeInterface
 {
+    public const TYPE = 'literal';
+
     public function __construct(
         private readonly string $text
     ) {}
@@ -38,7 +40,7 @@ final class LiteralNode extends NamedAstNode implements LiteralNodeInterface
 
     public function getNodeType(): string
     {
-        return 'literal';
+        return LiteralNode::TYPE;
     }
 
     public function toArray(): array
@@ -50,7 +52,7 @@ final class LiteralNode extends NamedAstNode implements LiteralNodeInterface
         ];
     }
 
-    public static function fromArray(array $data, ?TypeRegistry $typeRegistry = null): static
+    public static function fromArray(array $data, NodeRegistryInterface $nodeRegistry, TypeRegistryInterface $typeRegistry): static
     {
         $node = new self($data['text']);
         $node->setRegex($data['regex'] ?? null);

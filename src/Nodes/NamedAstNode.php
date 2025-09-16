@@ -9,5 +9,5 @@ abstract class NamedAstNode extends AstNode implements NamedNodeInterface
     /**
      * Get the node type name for serialization
      */
-    abstract public function getNodeType(): string;
+    abstract function getNodeType(): string;
 }

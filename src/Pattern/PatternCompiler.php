@@ -4,17 +4,19 @@ namespace TypedPatternEngine\Pattern;
 
 use TypedPatternEngine\Compiler\CompiledPattern;
 use TypedPatternEngine\Compiler\CompiledPatternFactory;
-use TypedPatternEngine\Types\TypeRegistry;
-use TypedPatternEngine\Validation\ValidatorInterface;
 use TypedPatternEngine\Exception\PatternCompilationException;
-use TypedPatternEngine\Exception\PatternValidationException;
 use TypedPatternEngine\Exception\PatternSyntaxException;
+use TypedPatternEngine\Exception\PatternValidationException;
 use TypedPatternEngine\Exception\TypeSystemException;
+use TypedPatternEngine\Nodes\NodeRegistryInterface;
+use TypedPatternEngine\Types\TypeRegistryInterface;
+use TypedPatternEngine\Validation\ValidatorInterface;
 
 final class PatternCompiler
 {
     public function __construct(
-        private readonly TypeRegistry $typeRegistry,
+        private readonly NodeRegistryInterface $nodeRegistry,
+        private readonly TypeRegistryInterface $typeRegistry,
         private readonly CompiledPatternFactory $factory,
         private readonly ValidatorInterface $validator
     ) {}
@@ -29,7 +31,7 @@ final class PatternCompiler
     public function compile(string $pattern): CompiledPattern
     {
         // Parse
-        $astRootNode = (new PatternParser($this->typeRegistry, $pattern))->parse();
+        $astRootNode = (new PatternParser($this->nodeRegistry, $this->typeRegistry, $pattern))->parse();
 
         // Validate using injected validator pipeline
         $this->validator->validate($astRootNode);

@@ -4,6 +4,8 @@ namespace TypedPatternEngine\Nodes\Interfaces;
 
 interface NamedNodeInterface extends AstNodeInterface
 {
+    public const TYPE = '';
+
     /**
      * NODE TYPE NAME (literal, group, sequence, subsequence ... eg)
      * @return string

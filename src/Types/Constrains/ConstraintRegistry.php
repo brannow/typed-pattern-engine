@@ -6,7 +6,7 @@ use TypedPatternEngine\Types\Constrains\Interfaces\TypeConstraint;
 use TypedPatternEngine\Types\ConstraintAwareInterface;
 use TypedPatternEngine\Exception\PatternRuntimeException;
 
-class ConstraintRegistry
+class ConstraintRegistry implements ConstraintRegistryInterface
 {
 
     /**

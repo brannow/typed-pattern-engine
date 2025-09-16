@@ -2,24 +2,41 @@
 
 namespace TypedPatternEngine\Nodes;
 
+use RuntimeException;
 use TypedPatternEngine\Nodes\Interfaces\AstNodeInterface;
 use TypedPatternEngine\Nodes\Interfaces\BoundaryProviderInterface;
-use TypedPatternEngine\Nodes\Interfaces\LiteralNodeInterface;
-use TypedPatternEngine\Nodes\Interfaces\NestedNodeInterface;
+use TypedPatternEngine\Nodes\Interfaces\CompilationPhaseAwareInterface;
 use TypedPatternEngine\Nodes\Interfaces\NodeTreeInterface;
-use TypedPatternEngine\Nodes\Interfaces\NodeValidationInterface;
-use TypedPatternEngine\Types\TypeRegistry;
-use RuntimeException;
+use TypedPatternEngine\Types\TypeRegistryInterface;
 
-abstract class AstNode implements AstNodeInterface
+abstract class AstNode implements AstNodeInterface, CompilationPhaseAwareInterface
 {
     private ?string $regex = null;
     private ?NodeTreeInterface $parent = null;
+    private bool $treeFinalized = false;
 
     /**
      * Cached boundary for performance
      */
     private ?string $cachedBoundary = null;
+
+    public function onTreeComplete(): void
+    {
+        $this->treeFinalized = true;
+        // Calculate boundaries once after tree is built
+        if ($this instanceof BoundaryProviderInterface) {
+            $this->cachedBoundary = $this->calculateNextBoundary();
+        }
+
+        // Propagate to children
+        if ($this instanceof NodeTreeInterface) {
+            foreach ($this->getChildren() as $child) {
+                if ($child instanceof CompilationPhaseAwareInterface) {
+                    $child->onTreeComplete();
+                }
+            }
+        }
+    }
 
     /**
      * Generate Regex from Pattern via AST
@@ -88,7 +105,12 @@ abstract class AstNode implements AstNodeInterface
 
     final protected function getNextBoundary(): ?string
     {
-        return $this->cachedBoundary ??= $this->calculateNextBoundary();
+        if (!$this->treeFinalized) {
+            // During construction, return null or throw
+            return null;
+        }
+
+        return $this->cachedBoundary;
     }
 
     /**
@@ -139,5 +161,5 @@ abstract class AstNode implements AstNodeInterface
      * @return string
      */
     abstract public function generate(array $values): string;
-    abstract public static function fromArray(array $data, ?TypeRegistry $typeRegistry = null): static;
+    abstract public static function fromArray(array $data, NodeRegistryInterface $nodeRegistry ,TypeRegistryInterface $typeRegistry): static;
 }
