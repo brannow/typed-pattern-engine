@@ -38,8 +38,10 @@ class TypeAnalyzer
         // Probe for allowed characters (optimized)
         $allowedChars = self::probeAllowedCharactersOptimized($type);
 
-        // Probe for length constraints
-        [$minLen, $maxLen] = self::probeLengthConstraints($type, $allowedChars);
+        // Simple heuristic: we don't probe actual length constraints
+        // The NodeAnalyzer will handle min/max based on optionality
+        $minLen = 0;  // Conservative default
+        $maxLen = null; // No limit
 
         // Check if empty string is valid
         $canBeEmpty = self::probeCanBeEmpty($type);
@@ -68,8 +70,42 @@ class TypeAnalyzer
         $allowedChars = [];
         $testedChars = [];
 
+        // First, test if this might be a numeric type with constraints
+        // by testing some multi-digit values
+        $numericTests = ['123', '456', '999', '1000'];
+        $acceptsNumbers = false;
+        foreach ($numericTests as $test) {
+            try {
+                $type->parseValue($test);
+                $acceptsNumbers = true;
+                break;
+            } catch (PatternEngineInvalidArgumentException) {
+                // Not accepted
+            }
+        }
+
+        if ($acceptsNumbers) {
+            // For numeric types, assume digits are allowed even if
+            // individual digits might be rejected due to constraints
+            for ($i = ord('0'); $i <= ord('9'); $i++) {
+                $allowedChars[$i] = true;
+                $testedChars[$i] = true;
+            }
+            // Also check for minus sign with multi-char negative numbers
+            try {
+                $type->parseValue('-100');
+                $allowedChars[ord('-')] = true;
+            } catch (PatternEngineInvalidArgumentException) {
+                // Minus not allowed
+            }
+        }
+
         // First, test common character sets to batch-identify allowed ranges
-        foreach (self::CHAR_SETS as $chars) {
+        foreach (self::CHAR_SETS as $setName => $chars) {
+            // Skip digits if we already handled them as numeric
+            if ($setName === 'digits' && $acceptsNumbers) {
+                continue;
+            }
             // Try the whole set at once
             try {
                 $type->parseValue($chars);
@@ -84,7 +120,7 @@ class TypeAnalyzer
                 for ($i = 0; $i < strlen($chars); $i++) {
                     $char = $chars[$i];
                     $ord = ord($char);
-                    if (!isset($testedChars[$ord])) {
+                    if (!isset($testedChars[$ord]) && !isset($allowedChars[$ord])) {
                         try {
                             $type->parseValue($char);
                             $allowedChars[$ord] = true;
@@ -99,7 +135,7 @@ class TypeAnalyzer
 
         // Test remaining printable ASCII characters not in sets
         for ($i = 32; $i < 127; $i++) {
-            if (!isset($testedChars[$i])) {
+            if (!isset($testedChars[$i]) && !isset($allowedChars[$i])) {
                 $char = chr($i);
                 try {
                     $type->parseValue($char);
@@ -150,149 +186,6 @@ class TypeAnalyzer
         }
     }
 
-    /**
-     * Probe length constraints using binary search
-     *
-     * @param TypeInterface $type
-     * @param array<int, true> $allowedChars
-     * @return array<int|null>
-     */
-    private static function probeLengthConstraints(TypeInterface $type, array $allowedChars): array
-    {
-        // Find a safe test character from allowed chars
-        $testChar = self::findSafeTestCharacter($type, $allowedChars);
-
-        // Find minimum length
-        $minLen = self::findMinimumLengthBinary($type, $testChar);
-
-        // Find maximum length
-        $maxLen = self::findMaximumLengthBinary($type, $testChar, $minLen);
-
-        return [$minLen, $maxLen];
-    }
-
-    /**
-     * Find minimum valid length using binary search
-     */
-    private static function findMinimumLengthBinary(TypeInterface $type, string $testChar): int
-    {
-        // Quick check for empty string
-        try {
-            $type->parseValue('');
-            return 0;
-        } catch (PatternEngineInvalidArgumentException) {
-            // Empty not allowed
-        }
-
-        // Binary search for minimum length (1-100)
-        $low = 1;
-        $high = 100;
-        $minFound = 100;
-
-        while ($low <= $high) {
-            $mid = (int)(($low + $high) / 2);
-            $testValue = str_repeat($testChar, $mid);
-
-            try {
-                $type->parseValue($testValue);
-                // This length works, try shorter
-                $minFound = min($minFound, $mid);
-                $high = $mid - 1;
-            } catch (PatternEngineInvalidArgumentException) {
-                // Too short, try longer
-                $low = $mid + 1;
-            }
-        }
-
-        return $minFound;
-    }
-
-    /**
-     * Find maximum valid length using exponential search then binary search
-     */
-    private static function findMaximumLengthBinary(TypeInterface $type, string $testChar, int $minLen): ?int
-    {
-        // First, use exponential search to find upper bound
-        $testLen = max(100, $minLen * 10);
-        $maxTestLen = AnalyzerResult::MAX_LEN_LIMIT;
-
-        // Find a length that fails
-        while ($testLen <= $maxTestLen) {
-            $testValue = str_repeat($testChar, $testLen);
-            try {
-                $type->parseValue($testValue);
-                // Still works, double the length
-                $testLen *= 2;
-            } catch (PatternEngineInvalidArgumentException) {
-                // Found upper bound, break
-                break;
-            }
-        }
-
-        // If we hit max test length, and it still works, assume no limit
-        if ($testLen > $maxTestLen) {
-            $testValue = str_repeat($testChar, $maxTestLen);
-            try {
-                $type->parseValue($testValue);
-                return null; // No upper limit detected
-            } catch (PatternEngineInvalidArgumentException) {
-                // There is a limit, continue to find it
-            }
-        }
-
-        // Binary search between minLen and testLen
-        $low = $minLen;
-        $high = min($testLen, $maxTestLen);
-        $maxFound = $minLen;
-
-        while ($low <= $high) {
-            $mid = (int)(($low + $high) / 2);
-            $testValue = str_repeat($testChar, $mid);
-
-            try {
-                $type->parseValue($testValue);
-                // This length works, try longer
-                $maxFound = $mid;
-                $low = $mid + 1;
-            } catch (PatternEngineInvalidArgumentException) {
-                // Too long, try shorter
-                $high = $mid - 1;
-            }
-        }
-
-        return $maxFound;
-    }
-
-    /**
-     * Find a character that this type accepts for testing
-     *  Prioritize from already known allowed chars
-     *
-     * @param TypeInterface $type
-     * @param array<int, true> $allowedChars
-     * @return string
-     */
-    private static function findSafeTestCharacter(TypeInterface $type, array $allowedChars): string
-    {
-        // Use first allowed char if we have any
-        if (!empty($allowedChars)) {
-            $firstAllowed = array_key_first($allowedChars);
-            return chr($firstAllowed);
-        }
-
-        // Fallback to common test characters
-        $testChars = ['a', '1', '0', 'A', 'x', '_', '-', '.'];
-        foreach ($testChars as $char) {
-            try {
-                $type->parseValue($char);
-                return $char;
-            } catch (PatternEngineInvalidArgumentException) {
-                // Try next
-            }
-        }
-
-        // Last resort - should rarely reach here
-        return 'a';
-    }
 
     /**
      * Check if empty string is valid

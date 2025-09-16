@@ -39,13 +39,16 @@ class NodeAnalyzer
      */
     private static function analyzeTypeNode(TypeNodeInterface $typeNode): AnalyzerResult
     {
-        // Get the type and analyze it using blackbox probing
+        // Simple heuristic:
+        // - Optional types have minLen = 0
+        // - Required types have minLen = 1
+        // - All types have maxLen = 1000 (reasonable upper bound)
+        $minLen = $typeNode->isOptional() ? 0 : 1;
+        $maxLen = 1000;
+
+        // Get the type for allowed chars analysis
         $type = $typeNode->getType();
         $typeAnalysis = TypeAnalyzer::analyzeType($type);
-
-        // Adjust min/max based on optionality
-        $minLen = $typeNode->isOptional() ? 0 : $typeAnalysis->getMinLen();
-        $maxLen = $typeAnalysis->getMaxLen();
 
         // Types don't have literals
         $literals = [];
@@ -121,9 +124,13 @@ class NodeAnalyzer
                 $prefix = $childAnalysis->getPrefix();
             }
 
-            // Set suffix from last child
+            // Set suffix from last child (but only if it's required)
             if ($i === count($childAnalyses) - 1 && $childAnalysis->getSuffix() !== null) {
-                $suffix = $childAnalysis->getSuffix();
+                // Only use suffix if this child contributes to minLen (i.e., is required)
+                if ($childAnalysis->getMinLen() > 0) {
+                    $suffix = $childAnalysis->getSuffix();
+                }
+                // If last child is optional, we don't have a definite suffix
             }
         }
 
@@ -153,6 +160,13 @@ class NodeAnalyzer
         $text = $node->getText();
         $literalTextLength = strlen($text);
 
+        // Simple heuristic:
+        // - Optional literals have minLen = 0
+        // - Required literals have minLen = text length
+        // - maxLen is always the text length for literals (they're fixed)
+        $minLen = $node->isOptional() ? 0 : $literalTextLength;
+        $maxLen = $literalTextLength; // Literals have fixed length
+
         // Build allowed chars from literal text
         $allowedChars = [];
         for ($i = 0; $i < $literalTextLength; $i++) {
@@ -160,8 +174,8 @@ class NodeAnalyzer
         }
 
         return new AnalyzerResult(
-            minLen: $node->isOptional() ? 0 : $literalTextLength,
-            maxLen: $literalTextLength, // Literals have fixed length
+            minLen: $minLen,
+            maxLen: $maxLen,
             literals: [$text => !$node->isOptional()], // Required if not optional
             allowedChars: $allowedChars,
             prefix: $text,
