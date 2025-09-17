@@ -420,11 +420,13 @@ final class PatternHeuristic implements HeuristicPatternInterface
         }
 
         // 6. Required literals - certain rejection if any missing
-        foreach ($this->requiredLiterals as $literal => $_) {
+        // disable this one for now, since required literal are maybe only valid for ONE
+        // out of 2 but the other one would fail
+        /*foreach ($this->requiredLiterals as $literal => $_) {
             if (!str_contains($string, $literal)) {
                 return false;
             }
-        }
+        }*/
 
         // 7. Character validation - certain rejection if contains impossible chars
         if (!empty($this->allowedChars)) {
