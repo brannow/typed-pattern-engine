@@ -149,7 +149,7 @@ final class PatternHeuristic implements HeuristicPatternInterface
         $possibleSuffixes = self::collectPossibleSuffixes($analyses);
 
         // 6. Find required literals (must appear in ALL patterns as required)
-        $requiredLiterals = self::findRequiredLiterals($analyses);
+        $requiredLiterals = []; // not working for now self::findRequiredLiterals($analyses);
 
         // 7. Build allowed character set (union of all - for rejection of impossible chars)
         $allowedChars = self::buildAllowedCharSet($analyses);
@@ -245,6 +245,9 @@ final class PatternHeuristic implements HeuristicPatternInterface
             $prefix = $analysis->getPrefix();
             if ($prefix !== null && $prefix !== '') {
                 $prefixes[$prefix] = true;
+            } else {
+                // only if ALL pattern has prefixes we can be certain, otherwise it makes no sence to check for it
+                return [];
             }
         }
 
@@ -265,6 +268,9 @@ final class PatternHeuristic implements HeuristicPatternInterface
             $suffix = $analysis->getSuffix();
             if ($suffix !== null && $suffix !== '') {
                 $suffixes[$suffix] = true;
+            } else {
+                // only if ALL pattern has prefixes we can be certain, otherwise it makes no sence to check for it
+                return [];
             }
         }
 
@@ -422,11 +428,11 @@ final class PatternHeuristic implements HeuristicPatternInterface
         // 6. Required literals - certain rejection if any missing
         // disable this one for now, since required literal are maybe only valid for ONE
         // out of 2 but the other one would fail
-        /*foreach ($this->requiredLiterals as $literal => $_) {
+        foreach ($this->requiredLiterals as $literal => $_) {
             if (!str_contains($string, $literal)) {
                 return false;
             }
-        }*/
+        }
 
         // 7. Character validation - certain rejection if contains impossible chars
         if (!empty($this->allowedChars)) {
