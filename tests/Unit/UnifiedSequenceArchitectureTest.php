@@ -3,7 +3,6 @@
 namespace TypedPatternEngine\Tests\Unit;
 
 use TypedPatternEngine\TypedPatternEngine;
-use TypedPatternEngine\Types\TypeRegistry;
 use TypedPatternEngine\Exception\PatternValidationException;
 use Generator;
 use PHPUnit\Framework\Attributes\DataProvider;

@@ -4,7 +4,6 @@ namespace TypedPatternEngine\Tests\Unit;
 
 use TypedPatternEngine\Heuristic\Analyzer\AnalyzerResult;
 use TypedPatternEngine\TypedPatternEngine;
-use TypedPatternEngine\Types\TypeRegistry;
 use TypedPatternEngine\Exception\PatternValidationException;
 use TypedPatternEngine\Exception\PatternSyntaxException;
 use TypedPatternEngine\Exception\TypeSystemException;
