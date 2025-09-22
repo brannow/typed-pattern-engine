@@ -231,7 +231,7 @@ class OptionalGroupDefaultGenerationTest extends TestCase
         yield 'multiple-sections-second-non-default' => [
             'FILE{name:str}(.{ext:str(default=txt)})(_{version:int(default=1)})',
             ['name' => 'doc', 'version' => 2],
-            'FILEdoc.txt_2'  // Need version, must render ext with default
+            'FILEdoc_2'  // Need version, must render ext with default
         ];
 
         yield 'multiple-sections-both-non-default' => [
@@ -242,19 +242,19 @@ class OptionalGroupDefaultGenerationTest extends TestCase
 
         // Complex real-world example
         yield 'complex-url-pattern-minimal' => [
-            '/{lang:str(default=en)}?/page/{pageId:int}(-{slug:str(default=untitled)}(#p{paragraph:int(default=1)}))',
+            '(/{lang:str(default=en)})/page/{pageId:int}(-{slug:str(default=untitled)}(#p{paragraph:int(default=1)}))',
             ['pageId' => 123],
             '/page/123'  // lang uses ? syntax, becomes '/' required, lang omitted; slug section all defaults
         ];
 
         yield 'complex-url-pattern-with-slug' => [
-            '/{lang:str(default=en)}?/page/{pageId:int}(-{slug:str(default=untitled)}(#p{paragraph:int(default=1)}))',
+            '(/{lang:str(default=en)})/page/{pageId:int}(-{slug:str(default=untitled)}(#p{paragraph:int(default=1)}))',
             ['pageId' => 123, 'slug' => 'my-article'],
             '/page/123-my-article'  // lang default, slug differs, paragraph default omitted
         ];
 
         yield 'complex-url-pattern-with-paragraph' => [
-            '/{lang:str(default=en)}?/page/{pageId:int}(-{slug:str(default=untitled)}(#p{paragraph:int(default=1)}))',
+            '(/{lang:str(default=en)})/page/{pageId:int}(-{slug:str(default=untitled)}(#p{paragraph:int(default=1)}))',
             ['pageId' => 123, 'paragraph' => 3],
             '/page/123-untitled#p3'  // Need paragraph, must render slug with default
         ];

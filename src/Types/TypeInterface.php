@@ -49,6 +49,11 @@ interface TypeInterface extends ConstraintAwareInterface
     public function parseValue(mixed $value): mixed;
 
     /**
+     * @return mixed
+     */
+    public function isDefaultValue(mixed $value): bool;
+
+    /**
      * Serialize a PHP value back to string for URL generation.
      *
      * @param mixed $value The PHP value

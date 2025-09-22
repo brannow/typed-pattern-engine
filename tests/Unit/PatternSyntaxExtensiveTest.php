@@ -66,7 +66,8 @@ class PatternSyntaxExtensiveTest extends TestCase
         
         if ($shouldThrow) {
             $this->expectException(\Exception::class);
-            $compiled->generate($values);
+            $result = $compiled->generate($values);
+            $this->assertSame($result, $expectedOutput);
         } else {
             $generated = $compiled->generate($values);
             $this->assertSame($expectedOutput, $generated);

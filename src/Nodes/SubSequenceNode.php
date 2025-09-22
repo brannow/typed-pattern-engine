@@ -4,6 +4,8 @@ namespace TypedPatternEngine\Nodes;
 
 use Throwable;
 use TypedPatternEngine\Exception\PatternSyntaxException;
+use TypedPatternEngine\Nodes\Interfaces\NodeTreeInterface;
+use TypedPatternEngine\Nodes\Interfaces\TypeNodeInterface;
 use TypedPatternEngine\Types\TypeInterface;
 
 final class SubSequenceNode extends SequenceNode
@@ -19,11 +21,13 @@ final class SubSequenceNode extends SequenceNode
     {
         $requirements = [];
         foreach ($this->children as $child) {
-            if ($child instanceof GroupNode) {
+            if ($child instanceof TypeNodeInterface) {
                 $requirements[$child->getGroupId()] = [
                     'name' => $child->getName(),
                     'type' => $child->getType()
                 ];
+            } elseif ($child instanceof SubSequenceNode) {
+                $requirements = $requirements + $child->getActivationRequirements();
             }
         }
         return $requirements;
@@ -53,16 +57,28 @@ final class SubSequenceNode extends SequenceNode
      */
     public function generate(array $values): string
     {
-        foreach ($this->getActivationRequirements() as $requirement) {
+        $requirementsGiven = [];
+        foreach ($this->getActivationRequirements() as $key => $requirement) {
             $value = $values[$requirement['name']] ?? null;
             /** @var TypeInterface $type */
             $type = $requirement['type'];
 
             try {
-                $type->parseValue($value);
+                $testValue = $type->parseValue($value);
+                // is default value, omit
+                if ($type->isDefaultValue($testValue)) {
+                    $requirementsGiven[$key] = null;
+                } else {
+                    $requirementsGiven[$key] = true;
+                }
             } catch (Throwable) {
-                return '';
+                $requirementsGiven[$key] = null;
             }
+        }
+
+        // all sub Groups are failing or defaulting, so we don't need to print default values
+        if (empty(array_filter($requirementsGiven))) {
+            return '';
         }
 
         // All requirements can be satisfied, generate the full subsequence
