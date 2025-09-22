@@ -36,11 +36,16 @@ final class StringType extends Type
     public function parseValue(mixed $value): mixed
     {
         // Validate raw input before applying constraints
-        if (!is_scalar($value) || empty($value)) {
+        if (!is_scalar($value) && $value !== null) {
             throw new PatternEngineInvalidArgumentException('Value must be scalar for str type, got: \'' . gettype($value).'\'');
         }
-        
-        return parent::parseValue((string)$value);
+
+        $value = parent::parseValue($value);
+        if (empty($value) && $this->getConstraint('default') === null) {
+            throw new PatternEngineInvalidArgumentException('Value must be scalar for str type, got: empty, with no Default');
+        }
+
+        return (string)$value;
     }
 
     /**
@@ -94,5 +99,14 @@ final class StringType extends Type
     {
         // v1.0: String type is always greedy, constraints don't affect greediness
         return true;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isDefaultValue(mixed $value): bool
+    {
+        $default = $this->getConstraint('default');
+        return $default && $value !== null && ((string)($default->getValue() ?? null)) === ((string)$value);
     }
 }

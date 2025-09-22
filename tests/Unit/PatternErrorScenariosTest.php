@@ -4,7 +4,6 @@ namespace TypedPatternEngine\Tests\Unit;
 
 use TypedPatternEngine\Heuristic\Analyzer\AnalyzerResult;
 use TypedPatternEngine\TypedPatternEngine;
-use TypedPatternEngine\Types\TypeRegistry;
 use TypedPatternEngine\Exception\PatternValidationException;
 use TypedPatternEngine\Exception\PatternSyntaxException;
 use TypedPatternEngine\Exception\TypeSystemException;
@@ -261,7 +260,8 @@ class PatternErrorScenariosTest extends TestCase
         
         // Nested optional structure
         yield 'nested-optional-partial' => ['PAGE{uid:int}(-{lang:str}(-{var:str}))', ['uid' => 123, 'lang' => 'en'], 'PAGE123-en'];
-        yield 'nested-optional-skip-middle' => ['PAGE{uid:int}(-{lang:str}(-{var:str}))', ['uid' => 123, 'var' => 'mobile'], 'PAGE123']; // Should skip if intermediate is missing
+        // no default value provided cannot see the middle-part
+        yield 'nested-optional-skip-middle' => ['PAGE{uid:int}(-{lang:str}(-{var:str}))', ['uid' => 123, 'var' => 'mobile'], null, true];
     }
 
     public static function heuristicEdgeCaseProvider(): Generator

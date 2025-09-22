@@ -6,7 +6,6 @@ use TypedPatternEngine\Exception\PatternEngineInvalidArgumentException;
 use TypedPatternEngine\Heuristic\Analyzer\AnalyzerResult;
 use TypedPatternEngine\Heuristic\HeuristicCompiler;
 use TypedPatternEngine\TypedPatternEngine;
-use TypedPatternEngine\Types\TypeRegistry;
 use Generator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

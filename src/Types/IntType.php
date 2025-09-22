@@ -89,4 +89,14 @@ final class IntType extends Type
         // v1.0: Int type is always greedy, constraints don't affect greediness
         return true;
     }
+
+    /**
+     * @param mixed $value
+     * @return bool
+     */
+    public function isDefaultValue(mixed $value): bool
+    {
+        $default = $this->getConstraint('default');
+        return $default && $value !== null && ((int)($default->getValue() ?? null)) === ((int)$value);
+    }
 }
